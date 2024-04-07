@@ -1,26 +1,39 @@
 {
-    "name": "GPT Jawaban Cepat",
-    "version": "0.0.1",
-    "manifest_version": 3,
-    "description": "Membuat jawaban cepat dari selection text dan crawler chat gpt",
-    "icons": {
-        "16": "assets/icons/icon16.png",
-        "32": "assets/icons/icon32.png",
-        "64": "assets/icons/icon64.png",
-        "128": "assets/icons/icon128.png"
+  "name": "GPT Jawaban Cepat",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "description": "Membuat jawaban cepat dari selection text dan crawler chat gpt",
+  "action": {
+    "default_title": "GPT Jawabawan Capat",
+    "default_icons": {
+      "16": "src/assets/icons/icon16.png",
+      "32": "src/assets/icons/icon32.png",
+      "64": "src/assets/icons/icon64.png",
+      "128": "src/assets/icons/icon128.png"
     },
-    "permissions": ["tabs", "nativeMessaging"],
-    "action": {
-        "default_popup": "popup/popup.html"
-    },
-    "content_scripts": [{
-        "matches": [
-            "<all_urls>"
-        ],
-        "js": ["vendor/jquery/jquery.js", "js/content.js"]
-    }],
-    "web_accessible_resources": [{
-        "resources": ["assets/images/*"],
-        "matches": ["<all_urls>"]
-    }]
+    "default_popup": "index.html"
+  },
+  "icons": {
+    "16": "src/assets/icons/icon16.png",
+    "32": "src/assets/icons/icon32.png",
+    "64": "src/assets/icons/icon64.png",
+    "128": "src/assets/icons/icon128.png"
+  },
+  "permissions": ["tabs", "nativeMessaging", "webRequest"],
+  "host_permissions": ["https://*/*", "http://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content_scripts/main.tsx"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/assets/images/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
 }
