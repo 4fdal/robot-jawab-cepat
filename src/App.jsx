@@ -1,10 +1,46 @@
-import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-
+import { useEffect, useState } from 'react'
 function App() {
-  const [count, setCount] = useState(0)
+
+  const [visible, setVisible] = useState(null)
+  
+  useEffect(() => {
+    chrome.storage.sync.get(['instruction', 'cookies'], (result) => {
+      if (result.visible == undefined) {
+        const defaultVisible = false
+        chrome.storage.sync.set({ visible: defaultVisible })
+        setVisible(defaultVisible)
+      }
+      else {
+        setVisible(result.visible)
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    chrome.storage.sync.get(['visible'], (result) => {
+      if (result.visible == undefined) {
+        const defaultVisible = false
+        chrome.storage.sync.set({ visible: defaultVisible })
+        setVisible(defaultVisible)
+      }
+      else {
+        setVisible(result.visible)
+      }
+    })
+
+    const handleChanged = (result, area) => {
+      if (area === 'sync') {
+        setVisible(result.visible)
+      }
+    }
+    chrome.storage.onChanged.addListener(handleChanged)
+    return () => chrome.storage.onChanged.removeListener(handleChanged)
+  }, [visible])
+
+
 
   return (
     <>
@@ -16,11 +52,13 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>Jawab Cepat</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+        {visible != null && <button onClick={() => {
+          chrome.storage.sync.set({ visible: !visible })
+        }}>
+          {!visible ? "Visible" : "Invisible"}
+        </button>}
         <p>
           Edit <code>src/App.jsx</code> and save to test HMR
         </p>

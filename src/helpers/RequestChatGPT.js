@@ -1,6 +1,6 @@
 export class RequestChatGPT {
     Cookie =
-        "__Host-next-auth.csrf-token=fac7c2ba2cf59ab751566514c93688d7b09b1c033a40a83b3ed91bd3b45ae5db%7Cd18fd652e33a4408a83ed8d838ae33fb0b6e478dbd9b44910acc25ff8b6645f2; __Secure-next-auth.callback-url=https%3A%2F%2Fonramp.g2.services.openai.com; oai-did=e8566c58-ddf7-43d8-b159-ca551c76c94c; __cf_bm=UcuBqloViWLXBnN6k5QPRyjKBbJc8rh6.tMwdDYRMjY-1712417736-1.0.1.1-vcCTfERmaVzpCR.JX2oo7SB4UlnekLPKUgChZxdvtIS47TPoXZIrynQSBVNVaXOaEVz7PE.Xm.4w5yqzJYFXnA; __cflb=0H28vVfF4aAyg2hkHFTZ1MVfKmWgNcKEweRXNgMNhwB; _cfuvid=21XoTr1SGxHsCjTV8xShbyYtREwhXcOQIOrFkSQ6KSk-1712416703709-0.0.1.1-604800000; _dd_s=rum=0&expire=1712418726033; cf_clearance=1qTrdSnJy21Z1C7Uht3rLglpmFfoP4oMtZd3.Sg1bcM-1712416705-1.0.1.1-_.dOX.vVvIWj2sam7zPAJgiRpS8lVnzGNpenO26e8umERpcJ6w.hC5BjWzJw5MO1Hxp18EBf.6DWg6tFCXrmDQ"
+        "oai-did=e8566c58-ddf7-43d8-b159-ca551c76c94c; cf_clearance=Nvs2spdVsxUlTjwzYBGtSxTkCTK4uWw7EyRWnJA7hrA-1712487396-1.0.1.1-IgvGRjc8n0WNdbDTcpnOveyYuvo5N_1gCNk03e2NH4fFvneLdc.F6ji823u2.v3VNF9FRoKIS_3PgEoMWllUwA; ajs_user_id=e8566c58-ddf7-43d8-b159-ca551c76c94c; ajs_anonymous_id=d59f598a-7fa4-4749-a53c-01f36d1a3f3d; __Host-next-auth.csrf-token=baa233f50645530953c3e33834cac71e90fe78d5474e84549d7c6531da2231c4%7C62a20b18d7837541522370bc2dd29f2abbd9a435e1d72cd429fbb16e414adf0e; __Secure-next-auth.callback-url=https%3A%2F%2Fchat.openai.com; __cf_bm=.m64nxfczxBIadlBFR1bKrZtXRpWZyCl4_Tt0cDF6lg-1712487394-1.0.1.1-8GtZplZdWnjF2W2.HRLkIYejwvHaTSnHVUPchiyOPIACxmcksQh3O1vTyY_fCfsm75F459tBmNOYatEhXujnIQ; __cflb=0H28vVfF4aAyg2hkHFTZ1MVfKmWgNcKF3Gw23wqqCAy; _cfuvid=sEnBd1BDhJkx_Iq3piDOs3BBqH0QiPmxh1z2FPoV3YQ-1712487394174-0.0.1.1-604800000; _dd_s=rum=0&expire=1712488315636"
 
     setCookie(Cookie) {
         this.Cookie = Cookie
@@ -8,6 +8,31 @@ export class RequestChatGPT {
 
     getUUIDV4() {
         return "00" + crypto.randomUUID().slice(2)
+    }
+
+    async getSessionSite() {
+        const url = "https://chat.openai.com/api/auth/session";
+        const res = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "TE": "trailers",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+            },
+        });
+
+        if (!res.ok) {
+            throw {
+                status: res.status,
+                response: await res.json(),
+            };
+        }
+
+        return res.headers.getSetCookie();
+
     }
 
     async getOpenAISentinelChatRequirementsToken() {
@@ -27,7 +52,7 @@ export class RequestChatGPT {
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
             },
 
-            credentials: "include"
+            credentials: "same-origin"
         })
 
         if (!res.ok) {
@@ -46,8 +71,10 @@ export class RequestChatGPT {
     }
 
     async getAnswers(question) {
+        
+        await this.getSessionSite()
+        
         const url = "https://chat.openai.com/backend-anon/conversation"
-
         const res = await fetch(url, {
             method: "POST",
             headers: {
@@ -90,20 +117,23 @@ export class RequestChatGPT {
                 force_rate_limit: false,
                 websocket_request_id: this.getUUIDV4()
             }),
-            credentials: "include"
+            credentials: "same-origin"
         })
 
         if (!res.ok) {
+            
+            var json = await res.json()
+            
             console.error(
                 "[errors]",
                 this.getAnswers.name,
                 JSON.stringify({
                     status: res.status,
-                    response: await res.json()
+                    response: json
                 })
             )
 
-            return null
+            return "[errors] "+json.detail
         }
 
         const stream = res.body

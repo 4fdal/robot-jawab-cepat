@@ -11,6 +11,7 @@ import Draggable from "react-draggable"
 import Action from "./components/Action"
 import ModalEditText from "./components/ModalEditText"
 import { RequestChatGPT } from "@/helpers/RequestChatGpt"
+import { MSG_TYPE_HTTP_RESPONSE, MSG_TYPE_HTTP_SEND, MSG_TYPE_SETTINGS } from "../constants/type_chrome_message"
 
 function App(props) {
     const rootId = props.rootId
@@ -121,20 +122,35 @@ function App(props) {
     ])
 
     React.useEffect(() => {
-        const handleCromeMessage = (request, sender, sendResponse) => {
-            if (request?.query?.visible) {
-                console.log(request?.query)
-                setVisible(request?.query?.visible)
+        chrome.storage.sync.get(['visible'], (result) => {
+            if (result.visible == undefined) {
+                const defaultVisible = false
+                chrome.storage.sync.set({ visible: defaultVisible })
+                setVisible(defaultVisible)
             }
-            sendResponse(true)
+            else {
+                setVisible(result.visible)
+            }
+        })
+
+        const handleChanged = (result, area) => {
+            if (area === 'sync') {
+                if (!result.visible) tanganiBerhentiMemilih()
+                setVisible(result.visible)
+            }
         }
-        // eslint-disable-next-line no-undef
-        chrome.runtime.onMessage.addListener(handleCromeMessage)
-        // eslint-disable-next-line no-undef
-        return () => chrome.runtime.onMessage.removeListener(handleCromeMessage)
+        chrome.storage.onChanged.addListener(handleChanged)
+        return () => chrome.storage.onChanged.removeListener(handleChanged)
     }, [visible])
 
-    console.log(visible)
+    React.useEffect(() => {
+        chrome.runtime.onMessage.addListener((result) => {
+            if (result.type == MSG_TYPE_HTTP_RESPONSE) {
+                console.log(result.data, "result with App.jsx")
+                // todo code ...
+            }
+        })
+    }, [jawaban])
 
     return (
         visible && (
@@ -253,25 +269,36 @@ function App(props) {
                             <Row>
                                 <Button
                                     onClick={() => {
-                                        const question =
-                                            "Berikan jawaban pada soal dibawah ini, cukup hanya menjawab pada pilihan yang telah tersedia berseta labelnya : \n\n " +
-                                            soal +
-                                            "\n" +
-                                            pilihan
+                                        tanganiBerhentiMemilih()
+
+                                        const question = "instruksi : pastikan anda hanya menjawab pertanyaan berdasarkan pilihan yang saya berikan, dan boleh untuk memberikan penjelasan sedikit terhadap pilihan jawaban anda\n\n\n" +
+                                            "pertanyaan : " + soal + "\n\n\n" +
+                                            "pilihan : " + pilihan
                                                 .map(
                                                     (item, index) =>
                                                         `${String.fromCharCode(65 + index)}. ${item}`
                                                 )
-                                                .join("\n")
+                                                .join("\n");
 
-                                        setLoadingJawaban(true)
-                                        new RequestChatGPT()
-                                            .getAnswers(question)
-                                            .then(jawaban => {
-                                                setJawaban(jawaban)
+
+                                        // chrome.runtime.sendMessage({
+                                        //     type: MSG_TYPE_HTTP_SEND,
+                                        //     question
+                                        // }, (response) => {
+                                        //     console.log(response)
+                                        //     setLoadingJawaban(false)
+                                        // });
+
+                                        (async () => {
+                                            setLoadingJawaban(true)
+                                            const jawaban = await chrome.runtime.sendMessage({
+                                                type: MSG_TYPE_HTTP_SEND,
+                                                question
                                             })
-                                            .catch(err => setJawaban(err.message))
-                                            .finally(() => setLoadingJawaban(false))
+
+                                            setJawaban(jawaban)
+                                            setLoadingJawaban(false)
+                                        })();
                                     }}
                                     icon={<SearchOutlined />}
                                 >
@@ -279,7 +306,7 @@ function App(props) {
                                 </Button>
                             </Row>
                             <Divider />
-                            {loadingJabawan ? <Spin size="small" /> : jawaban}
+                            {loadingJabawan ? <Spin size="small" /> : jawaban?.split("\n").map(item => (<p>{item}</p>))}
                         </Col>
                     </Card>
                 </div>
