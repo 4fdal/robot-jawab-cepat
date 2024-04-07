@@ -1,44 +1,53 @@
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import './App.css'
 import { useEffect, useState } from 'react'
+import { Form, Input } from 'antd'
+
+import './App.css'
+import config from '../default.json'
+
+
 function App() {
 
+
   const [visible, setVisible] = useState(null)
-  
-  useEffect(() => {
-    chrome.storage.sync.get(['instruction', 'cookies'], (result) => {
-      if (result.visible == undefined) {
-        const defaultVisible = false
-        chrome.storage.sync.set({ visible: defaultVisible })
-        setVisible(defaultVisible)
-      }
-      else {
-        setVisible(result.visible)
-      }
-    })
-  }, [])
+  const [instruction, setInstruction] = useState(null)
+  const [cookie, setCookie] = useState(null)
 
   useEffect(() => {
-    chrome.storage.sync.get(['visible'], (result) => {
+    chrome.storage.sync.get(['visible', 'instruction', 'cookie'], (result) => {
       if (result.visible == undefined) {
-        const defaultVisible = false
-        chrome.storage.sync.set({ visible: defaultVisible })
-        setVisible(defaultVisible)
-      }
-      else {
+        chrome.storage.sync.set({ visible: config.visible })
+        setVisible(config.visible)
+      } else {
         setVisible(result.visible)
+      }
+
+      if (result.instruction == undefined) {
+        chrome.storage.sync.set({ instruction: config.instruction })
+        setInstruction(config.instruction)
+      } else {
+        setInstruction(result.instruction)
+      }
+
+      if (result.cookie == undefined) {
+        chrome.storage.sync.set({ cookie: config.cookie })
+        setCookie(config.cookie)
+      } else {
+        setCookie(result.cookie)
       }
     })
 
     const handleChanged = (result, area) => {
       if (area === 'sync') {
         setVisible(result.visible)
+        setInstruction(result.instruction)
+        setCookie(result.cookie)
       }
     }
     chrome.storage.onChanged.addListener(handleChanged)
     return () => chrome.storage.onChanged.removeListener(handleChanged)
-  }, [visible])
+  }, [visible, instruction, cookie])
 
 
 
@@ -59,10 +68,17 @@ function App() {
         }}>
           {!visible ? "Visible" : "Invisible"}
         </button>}
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
       </div>
+
+      <Form.Item label="Custom Instruction">
+        <Input.TextArea rows={4} value={instruction} onChange={(e) => chrome.storage.sync.set({ instruction: e.target.value })} />
+      </Form.Item>
+
+      <Form.Item label="Custom Cookie">
+        <Input.TextArea rows={4} value={cookie} onChange={(e) => chrome.storage.sync.set({ cookie: e.target.value })} />
+      </Form.Item>
+
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>

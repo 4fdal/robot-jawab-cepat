@@ -1,9 +1,7 @@
 export class RequestChatGPT {
-    Cookie =
-        "oai-did=e8566c58-ddf7-43d8-b159-ca551c76c94c; cf_clearance=Nvs2spdVsxUlTjwzYBGtSxTkCTK4uWw7EyRWnJA7hrA-1712487396-1.0.1.1-IgvGRjc8n0WNdbDTcpnOveyYuvo5N_1gCNk03e2NH4fFvneLdc.F6ji823u2.v3VNF9FRoKIS_3PgEoMWllUwA; ajs_user_id=e8566c58-ddf7-43d8-b159-ca551c76c94c; ajs_anonymous_id=d59f598a-7fa4-4749-a53c-01f36d1a3f3d; __Host-next-auth.csrf-token=baa233f50645530953c3e33834cac71e90fe78d5474e84549d7c6531da2231c4%7C62a20b18d7837541522370bc2dd29f2abbd9a435e1d72cd429fbb16e414adf0e; __Secure-next-auth.callback-url=https%3A%2F%2Fchat.openai.com; __cf_bm=.m64nxfczxBIadlBFR1bKrZtXRpWZyCl4_Tt0cDF6lg-1712487394-1.0.1.1-8GtZplZdWnjF2W2.HRLkIYejwvHaTSnHVUPchiyOPIACxmcksQh3O1vTyY_fCfsm75F459tBmNOYatEhXujnIQ; __cflb=0H28vVfF4aAyg2hkHFTZ1MVfKmWgNcKF3Gw23wqqCAy; _cfuvid=sEnBd1BDhJkx_Iq3piDOs3BBqH0QiPmxh1z2FPoV3YQ-1712487394174-0.0.1.1-604800000; _dd_s=rum=0&expire=1712488315636"
 
-    setCookie(Cookie) {
-        this.Cookie = Cookie
+    async getCookie() {
+        return (await chrome.storage.sync.get(['cookie'])).cookie
     }
 
     getUUIDV4() {
@@ -14,7 +12,7 @@ export class RequestChatGPT {
         const url = "https://chat.openai.com/api/auth/session";
         const res = await fetch(url, {
             method: "GET",
-            credentials: "include",
+            credentials: "same-origin",
             headers: {
                 "Sec-Fetch-Dest": "empty",
                 "Sec-Fetch-Mode": "cors",
@@ -42,7 +40,7 @@ export class RequestChatGPT {
         const res = await fetch(url, {
             method: "POST",
             headers: {
-                Cookie: this.Cookie,
+                Cookie: await this.getCookie(),
                 "Content-Type": "application/json",
                 "Sec-Fetch-Dest": "empty",
                 "Sec-Fetch-Mode": "cors",
@@ -71,14 +69,14 @@ export class RequestChatGPT {
     }
 
     async getAnswers(question) {
-        
+
         await this.getSessionSite()
-        
+
         const url = "https://chat.openai.com/backend-anon/conversation"
         const res = await fetch(url, {
             method: "POST",
             headers: {
-                Cookie: this.Cookie,
+                Cookie: await this.getCookie(),
                 "OpenAI-Sentinel-Chat-Requirements-Token": await this.getOpenAISentinelChatRequirementsToken(),
                 "Content-Type": "application/json",
                 Accept: "text/event-stream",
@@ -121,9 +119,9 @@ export class RequestChatGPT {
         })
 
         if (!res.ok) {
-            
+
             var json = await res.json()
-            
+
             console.error(
                 "[errors]",
                 this.getAnswers.name,
@@ -133,7 +131,7 @@ export class RequestChatGPT {
                 })
             )
 
-            return "[errors] "+json.detail
+            return "[errors] " + json.detail
         }
 
         const stream = res.body

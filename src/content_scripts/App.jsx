@@ -269,28 +269,22 @@ function App(props) {
                             <Row>
                                 <Button
                                     onClick={() => {
-                                        tanganiBerhentiMemilih()
-
-                                        const question = "instruksi : pastikan anda hanya menjawab pertanyaan berdasarkan pilihan yang saya berikan, dan boleh untuk memberikan penjelasan sedikit terhadap pilihan jawaban anda\n\n\n" +
-                                            "pertanyaan : " + soal + "\n\n\n" +
-                                            "pilihan : " + pilihan
-                                                .map(
-                                                    (item, index) =>
-                                                        `${String.fromCharCode(65 + index)}. ${item}`
-                                                )
-                                                .join("\n");
-
-
-                                        // chrome.runtime.sendMessage({
-                                        //     type: MSG_TYPE_HTTP_SEND,
-                                        //     question
-                                        // }, (response) => {
-                                        //     console.log(response)
-                                        //     setLoadingJawaban(false)
-                                        // });
+                                        tanganiBerhentiMemilih();
 
                                         (async () => {
                                             setLoadingJawaban(true)
+                                            
+                                            const instruction = (await chrome.storage.sync.get(['instruction'])).instruction
+
+                                            const question = "instruksi : " + instruction + "\n\n\n" +
+                                                "pertanyaan : " + soal + "\n\n\n" +
+                                                "pilihan : " + pilihan
+                                                    .map(
+                                                        (item, index) =>
+                                                            `${String.fromCharCode(65 + index)}. ${item}`
+                                                    )
+                                                    .join("\n");
+
                                             const jawaban = await chrome.runtime.sendMessage({
                                                 type: MSG_TYPE_HTTP_SEND,
                                                 question
