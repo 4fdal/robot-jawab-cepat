@@ -1,11 +1,14 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 import { crx } from "@crxjs/vite-plugin";
-import { resolve } from "path";
-import manifest from "./manifest.json";
+
+
+import manifest from './manifest.json'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  plugins: [react(), crx({ manifest })],
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
@@ -28,5 +31,4 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1600,
   },
-  plugins: [react(), crx({ manifest })],
-});
+})
